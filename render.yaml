@@ -1,0 +1,61 @@
+services:
+  # Backend API Service
+  - type: web
+    name: project-camp-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SERVER_URL
+        fromService:
+          type: web
+          name: project-camp-backend
+          property: host
+      - key: MONGO_URI
+        sync: false  # Set this in Render dashboard
+      - key: ACCESS_TOKEN_SECRET
+        sync: false  # Set this in Render dashboard
+      - key: REFRESH_TOKEN_SECRET
+        sync: false  # Set this in Render dashboard
+      - key: ACCESS_TOKEN_EXPIRY
+        value: 15m
+      - key: REFRESH_TOKEN_EXPIRY
+        value: 30d
+      - key: CORS_ORIGIN
+        fromService:
+          type: static
+          name: project-camp-frontend
+          property: host
+      - key: MAILTRAP_SMTP_HOST
+        value: smtp.mailtrap.io
+      - key: MAILTRAP_SMTP_PORT
+        value: 2525
+      - key: MAILTRAP_SMTP_USER
+        sync: false  # Set this in Render dashboard
+      - key: MAILTRAP_SMTP_PASS
+        sync: false  # Set this in Render dashboard
+      - key: MAILTRAP_SENDER_EMAIL
+        value: noreply@projectcamp.com
+      - key: FORGOT_PASSWORD_REDIRECT_URL
+        fromService:
+          type: static
+          name: project-camp-frontend
+          property: host
+          path: /reset-password
+
+  # Frontend Static Site
+  - type: static
+    name: project-camp-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: project-camp-backend
+          property: host

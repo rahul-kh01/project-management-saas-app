@@ -1,0 +1,670 @@
+{
+	"info": {
+		"_postman_id": "244fc710-b8e7-41a2-b1ee-b155bb2a3739",
+		"name": "Claims + Credit + Users (Direct & Gateway)",
+		"description": "Postman collection for Claims, Users, Notifications, Reports, Credit Score. Supports direct ports (8080,8081,8082) and via API Gateway (8083/api).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "38189564"
+	},
+	"item": [
+		{
+			"name": "User Service (8082)",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"john2\",\n  \"password\": \"Password@123\",\n  \"email\": \"john2@example.com\",\n  \"fullName\": \"John Two\"\n}"
+						},
+						"url": {
+							"raw": "{{userBaseUrl}}/users/register",
+							"host": [
+								"{{userBaseUrl}}"
+							],
+							"path": [
+								"users",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.sendRequest({",
+									"    url: 'http://localhost:8082/users/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/x-www-form-urlencoded'",
+									"    },",
+									"    body: {",
+									"        mode: 'urlencoded',",
+									"        urlencoded: [",
+									"            { key: 'username', value: 'user705' },",
+									"            { key: 'password', value: 'Password@123' }",
+									"        ]",
+									"    }",
+									"}, function (err, res) {",
+									"    if (err) {",
+									"        console.error(\"Login request failed:\", err);",
+									"    } else {",
+									"        let authHeader = res.headers.get('Authorization');",
+									"        if (authHeader) {",
+									"            // remove leading/trailing spaces",
+									"            authHeader = authHeader.trim();",
+									"",
+									"            // store only the token without \"Bearer \" prefix",
+									"            let token = authHeader.replace(/^Bearer\\s+/, \"\");",
+									"",
+									"            // save full Bearer <token> string for header use",
+									"            pm.environment.set(\"authToken\", token);",
+									"",
+									"            console.log(\"JWT saved:\", token);",
+									"        } else {",
+									"            console.error(\"No Authorization header found in login response.\");",
+									"        }",
+									"    }",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let token = pm.response.headers.get('Authorization');",
+									"if (token) {",
+									"  pm.environment.set('authToken', token);",
+									"  console.log('JWT saved:', token);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "{{user}}",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "{{pwd}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{userBaseUrl}}/users/login",
+							"host": [
+								"{{userBaseUrl}}"
+							],
+							"path": [
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"auth": {
+							"type": "bearer"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{userBaseUrl}}/users/{{userId}}",
+							"host": [
+								"{{userBaseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User via Gateway",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{gatewayUrl}}/users/{{userId}}",
+							"host": [
+								"{{gatewayUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Claims Service (8080)",
+			"item": [
+				{
+					"name": "Submit Claim",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"policyNumber\": \"POL-10483\",\n  \"claimantName\": \"Rohit Malhotra\",\n  \"claimAmount\": 3725.50,\n  \"claimDate\": \"2025-09-21T14:22:18.947Z\",\n  \"description\": \"Water leakage from overhead tank causing ceiling collapse in living room\",\n  \"claimStatus\": \"PENDING\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{claimBaseUrl}}/claims",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"claims"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Claim by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{claimBaseUrl}}/claims/{{claimId}}",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"claims",
+								"{{claimId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Claim",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": {{claimId}},\n  \"policyNumber\": \"POL-0070000\",\n  \"claimAmount\": 16000.00,\n  \"claimStatus\": \"In Process\",\n  \"notes\": \"Retiremeent\"\n}"
+						},
+						"url": {
+							"raw": "{{claimBaseUrl}}/claims/{{claimId}}",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"claims",
+								"{{claimId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Claim",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{claimBaseUrl}}/claims/{{claimId}}",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"claims",
+								"{{claimId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Claims by User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{claimBaseUrl}}/claims/user/{{userId}}",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"claims",
+								"user",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Claim Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "text/plain"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{claimBaseUrl}}/claims/claims/{{claimId}}/status",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"claims",
+								"claims",
+								"{{claimId}}",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Subscribe Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"userId\": {{userId}}, \"message\": \"Notify me on claim updates\" }"
+						},
+						"url": {
+							"raw": "{{claimBaseUrl}}/notifications/subscribe",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"notifications",
+								"subscribe"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unsubscribe Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"userId\": {{userId}} }"
+						},
+						"url": {
+							"raw": "{{claimBaseUrl}}/notifications/unsubscribe",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"notifications",
+								"unsubscribe"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reports - Claims by Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{claimBaseUrl}}/reports/claims/status",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"reports",
+								"claims",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reports - Claims Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{claimBaseUrl}}/reports/claims/summary",
+							"host": [
+								"{{claimBaseUrl}}"
+							],
+							"path": [
+								"reports",
+								"claims",
+								"summary"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Credit Score Service (8081)",
+			"item": [
+				{
+					"name": "Calculate Credit Score",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"userId\": {{userId}}, \"score\": 720 }"
+						},
+						"url": {
+							"raw": "{{creditBaseUrl}}/score/calculate",
+							"host": [
+								"{{creditBaseUrl}}"
+							],
+							"path": [
+								"score",
+								"calculate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Credit Score",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{creditBaseUrl}}/score/{{userId}}",
+							"host": [
+								"{{creditBaseUrl}}"
+							],
+							"path": [
+								"score",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Credit Score History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{creditBaseUrl}}/score/history/{{userId}}",
+							"host": [
+								"{{creditBaseUrl}}"
+							],
+							"path": [
+								"score",
+								"history",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Average Credit Score",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{creditBaseUrl}}/score/average",
+							"host": [
+								"{{creditBaseUrl}}"
+							],
+							"path": [
+								"score",
+								"average"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "claimBaseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "creditBaseUrl",
+			"value": "http://localhost:8081"
+		},
+		{
+			"key": "userBaseUrl",
+			"value": "http://localhost:8082"
+		},
+		{
+			"key": "gatewayUrl",
+			"value": "http://localhost:8083/api"
+		},
+		{
+			"key": "userId",
+			"value": ""
+		},
+		{
+			"key": "claimId",
+			"value": ""
+		},
+		{
+			"key": "authToken",
+			"value": ""
+		},
+		{
+			"key": "pwd",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "user",
+			"value": "",
+			"type": "default"
+		}
+	]
+}

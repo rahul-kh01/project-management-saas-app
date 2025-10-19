@@ -1,0 +1,80 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+# package-lock.json  # Keep this for npm ci
+
+# Environment files
+
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+*.md
+!README.md
+docs/
+CHAT_*.md
+BACKEND_*.md
+PRD.md
+
+# Frontend
+frontend/
+
+# Testing
+coverage/
+.nyc_output
+*.test.js
+*.spec.js
+__tests__/
+
+# Logs
+logs/
+*.log
+
+# Build artifacts
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+Dockerfile.dev
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Uploads (will be in volume)
+public/images/*
+!public/images/.gitkeep
+
+# Scripts
+create-test-users.js
+scripts/
+

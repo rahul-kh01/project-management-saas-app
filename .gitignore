@@ -1,0 +1,52 @@
+# ==========================
+# Node.js Dependencies
+# ==========================
+node_modules/
+**/node_modules/
+
+# ==========================
+# Environment Files
+# ==========================
+.env
+*.env
+.env.*
+!.env.example   # (optional) allow env.example to be tracked
+
+# ==========================
+# Build & Dist Output
+# ==========================
+dist/
+build/
+.cache/
+.temp/
+*.log
+
+# ==========================
+# OS / Editor Files
+# ==========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ==========================
+# Shell Scripts
+# ==========================
+*.sh
+
+# ==========================
+# Markdown Docs
+# ==========================
+*.md
+
+# ==========================
+# Coverage / Tests
+# ==========================
+coverage/
+*.lcov
+
+# ==========================
+# Docker / Deployment
+# ==========================
+docker-data/

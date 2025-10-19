@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🌍 Global Base Styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-neutral-50 text-neutral-900 font-sans transition-colors duration-300;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-neutral-900 font-semibold;
+  }
+
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors;
+  }
+}
+
+/* 🧩 Reusable Components */
+@layer components {
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    background-color: theme('colors.primary.500');
+    color: white;
+    &:hover {
+      background-color: theme('colors.primary.600');
+    }
+    &:active {
+      background-color: theme('colors.primary.700');
+    }
+    &:focus {
+      --tw-ring-color: theme('colors.primary.300');
+    }
+  }
+
+  .btn-secondary {
+    background-color: theme('colors.secondary.500');
+    color: white;
+    &:hover {
+      background-color: theme('colors.secondary.600');
+    }
+    &:active {
+      background-color: theme('colors.secondary.700');
+    }
+    &:focus {
+      --tw-ring-color: theme('colors.secondary.300');
+    }
+  }
+
+  .btn-danger {
+    background-color: theme('colors.danger.500');
+    color: white;
+    &:hover {
+      background-color: theme('colors.danger.600');
+    }
+    &:active {
+      background-color: theme('colors.danger.700');
+    }
+    &:focus {
+      --tw-ring-color: theme('colors.danger.300');
+    }
+  }
+
+  .btn-outline {
+    border-width: 2px;
+    border-color: theme('colors.primary.500');
+    color: theme('colors.primary.600');
+    &:hover {
+      background-color: theme('colors.primary.50');
+    }
+    &:active {
+      background-color: theme('colors.primary.100');
+    }
+    &:focus {
+      --tw-ring-color: theme('colors.primary.200');
+    }
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-4 py-2 border border-slate-600 rounded-lg bg-slate-900/50 text-white placeholder-slate-400
+           focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all duration-200;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl hover:shadow-primary-500/10 border border-slate-700/50 hover:border-slate-600/50 p-6 transition-all duration-300;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-todo {
+    @apply bg-neutral-100 text-neutral-700;
+  }
+
+  .badge-in-progress {
+    @apply bg-warning-100 text-warning-700;
+  }
+
+  .badge-done {
+    @apply bg-success-100 text-success-700;
+  }
+
+  .badge-admin {
+    @apply bg-secondary-100 text-secondary-700;
+  }
+
+  .badge-project-admin {
+    @apply bg-primary-100 text-primary-700;
+  }
+
+  .badge-member {
+    @apply bg-neutral-100 text-neutral-700;
+  }
+
+  /* Utility - Shadow Hover */
+  .hover-card {
+    @apply transition-shadow duration-300 hover:shadow-lg;
+  }
+}
+
+/* 🖱️ Modern Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: theme('colors.neutral.100');
+}
+
+::-webkit-scrollbar-thumb {
+  background: theme('colors.neutral.400');
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: theme('colors.neutral.500');
+}
