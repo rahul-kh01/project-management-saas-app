@@ -19,12 +19,24 @@ const port = process.env.PORT || 3000;
 // Create HTTP server
 const httpServer = createServer(app);
 
-// Initialize Socket.IO with CORS
+// Initialize Socket.IO with optimized CORS and performance settings
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.CORS_ORIGIN?.split(",") || "http://localhost:5173",
     credentials: true,
     methods: ["GET", "POST"],
+  },
+  // Performance optimizations
+  pingTimeout: 60000,        // Increase ping timeout
+  pingInterval: 25000,        // Increase ping interval
+  upgradeTimeout: 10000,      // Increase upgrade timeout
+  maxHttpBufferSize: 1e6,     // 1MB buffer size
+  allowEIO3: true,            // Allow Engine.IO v3 clients
+  transports: ['websocket', 'polling'], // Enable both transports
+  // Connection state recovery
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+    skipMiddlewares: true,
   },
 });
 
