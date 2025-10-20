@@ -13,9 +13,11 @@ export const chatService = {
 
     token = authToken;
 
-    const serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-    socket = io(`${serverUrl}/chat`, {
+    socket = io(serverUrl, {
+      path: '/socket.io/',
+      namespace: '/chat',
       auth: {
         token: authToken,
       },
