@@ -1,5 +1,5 @@
 # Render-optimized Dockerfile for Project Management App
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app

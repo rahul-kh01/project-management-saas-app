@@ -7,9 +7,10 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "render-start": "node src/index.js",
     "create-test-users": "node create-test-users.js"
   },
-  "engines":{"node":"18.x"},
+  "engines": {"node": ">=20 <23"},
   "keywords": [
     "udemy",
     "course",
