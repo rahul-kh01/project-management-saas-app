@@ -426,4 +426,3 @@ export const setupChatSocket = (io) => {
 
   console.log("Chat socket handlers registered");
 };
-

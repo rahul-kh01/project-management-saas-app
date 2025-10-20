@@ -113,11 +113,19 @@ export const chatService = {
       return Promise.reject(new Error('Socket not connected'));
     }
 
+    if (!socket.connected) {
+      console.error('Socket not connected, attempting to reconnect...');
+      socket.connect();
+      return Promise.reject(new Error('Socket not connected, please try again'));
+    }
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
+        console.error('Join timeout for project:', projectId);
         reject(new Error('Join timeout - no response from server'));
-      }, 10000); // 10 second timeout
+      }, 15000); // 15 second timeout
 
+      console.log('Attempting to join project:', projectId);
       socket.emit('chat:join', { projectId }, (response) => {
         clearTimeout(timeout);
         
@@ -181,9 +189,11 @@ export const chatService = {
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
+        console.error('Message send timeout for project:', projectId, 'body:', body);
         reject(new Error('Message send timeout - no response from server'));
-      }, 15000); // 15 second timeout
+      }, 20000); // 20 second timeout
 
+      console.log('Sending message to project:', projectId, 'body:', body);
       socket.emit('chat:message', { projectId, body, tempId }, (response) => {
         clearTimeout(timeout);
         
@@ -214,11 +224,18 @@ export const chatService = {
   typing: ({ projectId, isTyping }) => {
     if (!socket) return Promise.reject(new Error('Socket not connected'));
 
+    if (!socket.connected) {
+      console.error('Socket not connected for typing indicator');
+      return Promise.reject(new Error('Socket not connected'));
+    }
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
+        console.error('Typing indicator timeout for project:', projectId);
         reject(new Error('Typing indicator timeout - no response from server'));
-      }, 5000); // 5 second timeout
+      }, 10000); // 10 second timeout
 
+      console.log('Sending typing indicator for project:', projectId, 'isTyping:', isTyping);
       socket.emit('chat:typing', { projectId, isTyping }, (response) => {
         clearTimeout(timeout);
         

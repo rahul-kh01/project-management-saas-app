@@ -105,7 +105,7 @@ async function testMultiUserChat() {
     console.log('3️⃣ Adding second user as project member...');
     try {
       const addMemberResponse = await axios.post(`${API_BASE_URL}/api/v1/projects/${projectId}/members`, {
-        userId: userTokens.user2.user._id,
+        email: userTokens.user2.user.email,
         role: 'member'
       }, {
         headers: {
