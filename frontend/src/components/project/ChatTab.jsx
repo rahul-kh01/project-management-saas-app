@@ -38,10 +38,15 @@ const ChatTab = ({ projectId }) => {
         const socket = chatService.connectSocket(token);
 
         // Socket event listeners
-        socket.on('connect', () => {
+        socket.on('connect', async () => {
           console.log('Chat connected');
           setConnected(true);
-          chatService.joinProject(projectId);
+          try {
+            await chatService.joinProject(projectId);
+            console.log('Successfully joined project chat');
+          } catch (error) {
+            console.error('Failed to join project chat:', error);
+          }
         });
 
         socket.on('disconnect', () => {
@@ -69,7 +74,9 @@ const ChatTab = ({ projectId }) => {
     // Cleanup on unmount
     return () => {
       if (projectId) {
-        chatService.leaveProject(projectId);
+        chatService.leaveProject(projectId).catch(error => {
+          console.error('Error leaving project chat:', error);
+        });
       }
     };
   }, [user, projectId]);
@@ -141,7 +148,7 @@ const ChatTab = ({ projectId }) => {
   }, []);
 
   // Handle sending message
-  const handleSendMessage = ({ body, attachments }) => {
+  const handleSendMessage = async ({ body, attachments }) => {
     if (!body.trim() && attachments.length === 0) return;
 
     // Generate temporary ID for optimistic UI update
@@ -164,13 +171,24 @@ const ChatTab = ({ projectId }) => {
 
     setMessages((prev) => [...prev, tempMessage]);
 
-    // Send via socket
-    chatService.sendMessage({ projectId, body, tempId });
+    try {
+      // Send via socket with acknowledgment
+      await chatService.sendMessage({ projectId, body, tempId });
+      console.log('Message sent successfully');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Remove the temporary message on error
+      setMessages((prev) => prev.filter(msg => msg.tempId !== tempId));
+    }
   };
 
   // Handle typing indicator
-  const handleTyping = (isTyping) => {
-    chatService.typing({ projectId, isTyping });
+  const handleTyping = async (isTyping) => {
+    try {
+      await chatService.typing({ projectId, isTyping });
+    } catch (error) {
+      console.error('Failed to send typing indicator:', error);
+    }
   };
 
   // Load more messages

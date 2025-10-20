@@ -106,47 +106,95 @@ export const chatService = {
     return socket;
   },
 
-  // Join project chat room
+  // Join project chat room with acknowledgment
   joinProject: (projectId) => {
     if (!socket) {
       console.error('Socket not connected');
-      return;
+      return Promise.reject(new Error('Socket not connected'));
     }
 
-    socket.emit('chat:join', { projectId });
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Join timeout - no response from server'));
+      }, 10000); // 10 second timeout
+
+      socket.emit('chat:join', { projectId }, (response) => {
+        clearTimeout(timeout);
+        
+        if (response && response.error) {
+          console.error('Join failed:', response.error);
+          reject(new Error(response.error));
+        } else {
+          console.log('Successfully joined project:', response);
+          resolve(response);
+        }
+      });
+    });
   },
 
-  // Leave project chat room
+  // Leave project chat room with acknowledgment
   leaveProject: (projectId) => {
-    if (!socket) return;
+    if (!socket) return Promise.reject(new Error('Socket not connected'));
 
-    socket.emit('chat:leave', { projectId });
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Leave timeout - no response from server'));
+      }, 5000); // 5 second timeout
+
+      socket.emit('chat:leave', { projectId }, (response) => {
+        clearTimeout(timeout);
+        
+        if (response && response.error) {
+          console.error('Leave failed:', response.error);
+          reject(new Error(response.error));
+        } else {
+          console.log('Successfully left project:', response);
+          resolve(response);
+        }
+      });
+    });
   },
 
-  // Send message with retry mechanism
+  // Send message with retry mechanism and acknowledgment
   sendMessage: ({ projectId, body, tempId }) => {
     if (!socket) {
       console.error('Socket not connected');
-      return;
+      return Promise.reject(new Error('Socket not connected'));
     }
 
     if (!socket.connected) {
       console.error('Socket not connected, attempting to reconnect...');
       socket.connect();
       // Queue message for when connection is restored
-      socket.once('connect', () => {
-        socket.emit('chat:message', { projectId, body, tempId });
+      return new Promise((resolve, reject) => {
+        socket.once('connect', () => {
+          this.sendMessage({ projectId, body, tempId })
+            .then(resolve)
+            .catch(reject);
+        });
+        
+        socket.once('connect_error', (error) => {
+          reject(new Error('Failed to reconnect: ' + error.message));
+        });
       });
-      return;
     }
 
-    // Send message with acknowledgment
-    socket.emit('chat:message', { projectId, body, tempId }, (response) => {
-      if (response && response.error) {
-        console.error('Message send failed:', response.error);
-      } else {
-        console.log('Message sent successfully');
-      }
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Message send timeout - no response from server'));
+      }, 15000); // 15 second timeout
+
+      socket.emit('chat:message', { projectId, body, tempId }, (response) => {
+        clearTimeout(timeout);
+        
+        if (response && response.error) {
+          console.error('Message send failed:', response.error);
+          reject(new Error(response.error));
+        } else {
+          console.log('Message sent successfully:', response);
+          resolve(response);
+        }
+      });
     });
   },
 
@@ -162,11 +210,27 @@ export const chatService = {
     };
   },
 
-  // Send typing indicator
+  // Send typing indicator with acknowledgment
   typing: ({ projectId, isTyping }) => {
-    if (!socket) return;
+    if (!socket) return Promise.reject(new Error('Socket not connected'));
 
-    socket.emit('chat:typing', { projectId, isTyping });
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Typing indicator timeout - no response from server'));
+      }, 5000); // 5 second timeout
+
+      socket.emit('chat:typing', { projectId, isTyping }, (response) => {
+        clearTimeout(timeout);
+        
+        if (response && response.error) {
+          console.error('Typing indicator failed:', response.error);
+          reject(new Error(response.error));
+        } else {
+          console.log('Typing indicator sent successfully:', response);
+          resolve(response);
+        }
+      });
+    });
   },
 
   // Listen for typing events
@@ -180,11 +244,27 @@ export const chatService = {
     };
   },
 
-  // Mark message as seen
+  // Mark message as seen with acknowledgment
   seen: ({ projectId, messageId }) => {
-    if (!socket) return;
+    if (!socket) return Promise.reject(new Error('Socket not connected'));
 
-    socket.emit('chat:seen', { projectId, messageId });
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Seen indicator timeout - no response from server'));
+      }, 5000); // 5 second timeout
+
+      socket.emit('chat:seen', { projectId, messageId }, (response) => {
+        clearTimeout(timeout);
+        
+        if (response && response.error) {
+          console.error('Seen indicator failed:', response.error);
+          reject(new Error(response.error));
+        } else {
+          console.log('Seen indicator sent successfully:', response);
+          resolve(response);
+        }
+      });
+    });
   },
 
   // Listen for seen events
