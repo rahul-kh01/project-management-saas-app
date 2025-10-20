@@ -5,6 +5,7 @@ import app from "./app.js";
 import connectDB from "./db/index.js";
 import { setupChatSocket } from "./sockets/chat.socket.js";
 import { validateEnvironment } from "./utils/env-validator.js";
+import { spawn } from "node:child_process";
 
 dotenv.config({
   path: "./.env",
@@ -34,6 +35,22 @@ import { logger } from "./utils/logger.js";
 
 connectDB()
   .then(() => {
+    // Optionally seed test users on startup (idempotent) when enabled
+    if (String(process.env.SEED_TEST_USERS).toLowerCase() === "true") {
+      const seeder = spawn("node", ["create-test-users.js"], {
+        stdio: "inherit",
+        env: process.env,
+      });
+
+      seeder.on("close", (code) => {
+        logger.info(`Test user seeding finished with code ${code}`);
+      });
+
+      seeder.on("error", (error) => {
+        logger.error("Failed to run test user seeder", { error: error.message });
+      });
+    }
+
     httpServer.listen(port, () => {
       logger.info(`Server listening on http://localhost:${port}`);
       logger.info("Socket.IO ready for connections");
