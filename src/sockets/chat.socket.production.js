@@ -93,7 +93,7 @@ export const setupChatSocket = (io) => {
   chatNamespace.on("connection", (socket) => {
     console.log(`User connected: ${socket.user.username} (${socket.id})`);
 
-    // Join project room - PRODUCTION VERSION WITH ENHANCED LOGGING
+    // Join project room - PRODUCTION VERSION
     socket.on("chat:join", (data, callback) => {
       const { projectId } = data;
       logSocketEvent('JOIN_ATTEMPT', socket.id, socket.user._id, { projectId });
@@ -179,10 +179,12 @@ export const setupChatSocket = (io) => {
       })();
     });
 
-    // Send message - COMPLETELY FIXED VERSION
+    // Send message - PRODUCTION VERSION
     socket.on("chat:message", (data, callback) => {
       const { projectId, body, tempId } = data;
       logSocketEvent('MESSAGE_ATTEMPT', socket.id, socket.user._id, { projectId, tempId });
+      
+      console.log('📥 Message request received:', { projectId, body, tempId });
       
       // Use async IIFE to handle async operations properly
       (async () => {
@@ -191,7 +193,10 @@ export const setupChatSocket = (io) => {
           if (!projectId) {
             const errorResponse = { error: "Project ID is required" };
             logSocketEvent('MESSAGE_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            if (callback) {
+              console.log('📤 Sending message error response:', errorResponse);
+              callback(errorResponse);
+            }
             return;
           }
 
@@ -204,7 +209,10 @@ export const setupChatSocket = (io) => {
               error: "You are not a member of this project"
             };
             logSocketEvent('MESSAGE_DENIED', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            if (callback) {
+              console.log('📤 Sending message denied response:', errorResponse);
+              callback(errorResponse);
+            }
             return;
           }
 
@@ -214,7 +222,10 @@ export const setupChatSocket = (io) => {
               error: "Message body is required"
             };
             logSocketEvent('MESSAGE_VALIDATION_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            if (callback) {
+              console.log('📤 Sending message validation error response:', errorResponse);
+              callback(errorResponse);
+            }
             return;
           }
 
@@ -251,7 +262,10 @@ export const setupChatSocket = (io) => {
             tempId,
             success: true
           };
-          if (callback) callback(successResponse);
+          if (callback) {
+            console.log('📤 Sending message success response:', successResponse);
+            callback(successResponse);
+          }
         } catch (error) {
           console.error("Error sending message:", error);
           const errorResponse = {
@@ -259,15 +273,20 @@ export const setupChatSocket = (io) => {
             details: error.message
           };
           logSocketEvent('MESSAGE_ERROR', socket.id, socket.user._id, errorResponse);
-          if (callback) callback(errorResponse);
+          if (callback) {
+            console.log('📤 Sending message error response:', errorResponse);
+            callback(errorResponse);
+          }
         }
       })();
     });
 
-    // Typing indicator - COMPLETELY FIXED VERSION
+    // Typing indicator - PRODUCTION VERSION
     socket.on("chat:typing", (data, callback) => {
       const { projectId, isTyping } = data;
       logSocketEvent('TYPING_ATTEMPT', socket.id, socket.user._id, { projectId, isTyping });
+      
+      console.log('📥 Typing request received:', { projectId, isTyping });
       
       // Use async IIFE to handle async operations properly
       (async () => {
@@ -276,7 +295,10 @@ export const setupChatSocket = (io) => {
           if (!projectId) {
             const errorResponse = { error: "Project ID is required" };
             logSocketEvent('TYPING_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            if (callback) {
+              console.log('📤 Sending typing error response:', errorResponse);
+              callback(errorResponse);
+            }
             return;
           }
 
@@ -287,7 +309,10 @@ export const setupChatSocket = (io) => {
           if (!isMember) {
             const errorResponse = { error: "Not a project member" };
             logSocketEvent('TYPING_DENIED', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            if (callback) {
+              console.log('📤 Sending typing denied response:', errorResponse);
+              callback(errorResponse);
+            }
             return;
           }
 
@@ -308,7 +333,10 @@ export const setupChatSocket = (io) => {
 
           // Acknowledge typing status
           const successResponse = { success: true, isTyping };
-          if (callback) callback(successResponse);
+          if (callback) {
+            console.log('📤 Sending typing success response:', successResponse);
+            callback(successResponse);
+          }
         } catch (error) {
           console.error("Error handling typing:", error);
           const errorResponse = { 
@@ -316,15 +344,20 @@ export const setupChatSocket = (io) => {
             details: error.message
           };
           logSocketEvent('TYPING_ERROR', socket.id, socket.user._id, errorResponse);
-          if (callback) callback(errorResponse);
+          if (callback) {
+            console.log('📤 Sending typing error response:', errorResponse);
+            callback(errorResponse);
+          }
         }
       })();
     });
 
-    // Mark message as seen - COMPLETELY FIXED VERSION
+    // Mark message as seen - PRODUCTION VERSION
     socket.on("chat:seen", (data, callback) => {
       const { projectId, messageId } = data;
       logSocketEvent('SEEN_ATTEMPT', socket.id, socket.user._id, { projectId, messageId });
+      
+      console.log('📥 Seen request received:', { projectId, messageId });
       
       // Use async IIFE to handle async operations properly
       (async () => {
@@ -333,7 +366,10 @@ export const setupChatSocket = (io) => {
           if (!projectId || !messageId) {
             const errorResponse = { error: "Project ID and Message ID are required" };
             logSocketEvent('SEEN_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            if (callback) {
+              console.log('📤 Sending seen error response:', errorResponse);
+              callback(errorResponse);
+            }
             return;
           }
 
@@ -344,7 +380,10 @@ export const setupChatSocket = (io) => {
           if (!isMember) {
             const errorResponse = { error: "Not a project member" };
             logSocketEvent('SEEN_DENIED', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            if (callback) {
+              console.log('📤 Sending seen denied response:', errorResponse);
+              callback(errorResponse);
+            }
             return;
           }
 
@@ -354,7 +393,10 @@ export const setupChatSocket = (io) => {
           if (!message) {
             const errorResponse = { error: "Message not found" };
             logSocketEvent('SEEN_MESSAGE_NOT_FOUND', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            if (callback) {
+              console.log('📤 Sending seen message not found response:', errorResponse);
+              callback(errorResponse);
+            }
             return;
           }
 
@@ -384,7 +426,10 @@ export const setupChatSocket = (io) => {
 
           // Acknowledge seen status
           const successResponse = { success: true, messageId };
-          if (callback) callback(successResponse);
+          if (callback) {
+            console.log('📤 Sending seen success response:', successResponse);
+            callback(successResponse);
+          }
         } catch (error) {
           console.error("Error marking message as seen:", error);
           const errorResponse = { 
@@ -392,22 +437,30 @@ export const setupChatSocket = (io) => {
             details: error.message
           };
           logSocketEvent('SEEN_ERROR', socket.id, socket.user._id, errorResponse);
-          if (callback) callback(errorResponse);
+          if (callback) {
+            console.log('📤 Sending seen error response:', errorResponse);
+            callback(errorResponse);
+          }
         }
       })();
     });
 
-    // Leave project room - COMPLETELY FIXED VERSION
+    // Leave project room - PRODUCTION VERSION
     socket.on("chat:leave", (data, callback) => {
       const { projectId } = data;
       logSocketEvent('LEAVE_ATTEMPT', socket.id, socket.user._id, { projectId });
+      
+      console.log('📥 Leave request received:', { projectId });
       
       try {
         // Validate inputs
         if (!projectId) {
           const errorResponse = { error: "Project ID is required" };
           logSocketEvent('LEAVE_ERROR', socket.id, socket.user._id, errorResponse);
-          if (callback) callback(errorResponse);
+          if (callback) {
+            console.log('📤 Sending leave error response:', errorResponse);
+            callback(errorResponse);
+          }
           return;
         }
 
@@ -429,7 +482,10 @@ export const setupChatSocket = (io) => {
 
         // Acknowledge leave
         const successResponse = { success: true, projectId };
-        if (callback) callback(successResponse);
+        if (callback) {
+          console.log('📤 Sending leave success response:', successResponse);
+          callback(successResponse);
+        }
       } catch (error) {
         console.error("Error leaving room:", error);
         const errorResponse = { 
@@ -437,7 +493,10 @@ export const setupChatSocket = (io) => {
           details: error.message
         };
         logSocketEvent('LEAVE_ERROR', socket.id, socket.user._id, errorResponse);
-        if (callback) callback(errorResponse);
+        if (callback) {
+          console.log('📤 Sending leave error response:', errorResponse);
+          callback(errorResponse);
+        }
       }
     });
 
@@ -456,4 +515,3 @@ export const setupChatSocket = (io) => {
 
   console.log("Chat socket handlers registered");
 };
-
