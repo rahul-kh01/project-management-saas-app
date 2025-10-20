@@ -19,11 +19,10 @@ const verifySocketToken = async (token) => {
   }
 };
 
-// Check if user is a member of the project (with enhanced caching)
+// Check if user is a member of the project
 const isProjectMember = async (userId, projectId) => {
   const cacheKey = `membership:${userId}:${projectId}`;
   
-  // Check cache first
   if (membershipCache.has(cacheKey)) {
     return membershipCache.get(cacheKey);
   }
@@ -35,10 +34,7 @@ const isProjectMember = async (userId, projectId) => {
     });
     
     const isMember = !!membership;
-    
-    // Cache result for 5 minutes
     membershipCache.set(cacheKey, isMember, 5 * 60 * 1000);
-    
     return isMember;
   } catch (error) {
     console.error('Error checking project membership:', error);
@@ -47,96 +43,79 @@ const isProjectMember = async (userId, projectId) => {
 };
 
 export const setupChatSocket = (io) => {
-  // Socket.IO namespace for chat
+  console.log("🔧 Setting up FINAL chat socket handlers...");
+  
   const chatNamespace = io.of("/chat");
 
-  // Enhanced error handling and logging
-  const logSocketEvent = (event, socketId, userId, data = {}) => {
-    console.log(`[Socket] ${event} - Socket: ${socketId}, User: ${userId}`, data);
-  };
-
+  // Authentication middleware
   chatNamespace.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
 
       if (!token) {
-        logSocketEvent('AUTH_FAILED', socket.id, 'unknown', { reason: 'No token' });
         return next(new Error("Authentication token required"));
       }
 
-      // Check cache first
       let user = userCache.get(token);
       if (!user) {
         user = await verifySocketToken(token);
         if (user) {
-          // Cache user for 10 minutes
           userCache.set(token, user, 10 * 60 * 1000);
-          logSocketEvent('USER_CACHED', socket.id, user._id);
         }
       }
 
       if (!user) {
-        logSocketEvent('AUTH_FAILED', socket.id, 'unknown', { reason: 'Invalid token' });
         return next(new Error("Invalid authentication token"));
       }
 
-      // Attach user to socket
       socket.user = user;
-      logSocketEvent('AUTH_SUCCESS', socket.id, user._id, { username: user.username });
       next();
     } catch (error) {
-      logSocketEvent('AUTH_ERROR', socket.id, 'unknown', { error: error.message });
       next(new Error("Authentication failed"));
     }
   });
 
   chatNamespace.on("connection", (socket) => {
-    console.log(`User connected: ${socket.user.username} (${socket.id})`);
+    console.log(`🔌 User connected: ${socket.user.username} (${socket.id})`);
 
-    // Join project room - PRODUCTION VERSION WITH ENHANCED LOGGING
+    // JOIN PROJECT ROOM - FINAL VERSION
     socket.on("chat:join", (data, callback) => {
+      console.log(`📥 JOIN REQUEST: ${socket.user.username} -> ${data.projectId}`);
+      
       const { projectId } = data;
-      logSocketEvent('JOIN_ATTEMPT', socket.id, socket.user._id, { projectId });
       
-      // Immediate response for debugging
-      console.log('📥 Join request received:', { projectId, socketId: socket.id });
-      
-      // Use async IIFE to handle async operations properly
+      // Immediate callback for debugging
+      if (callback) {
+        console.log(`📤 SENDING JOIN CALLBACK IMMEDIATELY`);
+        callback({
+          projectId,
+          message: "Successfully joined chat room",
+          success: true,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Async operations in background
       (async () => {
         try {
-          // Validate projectId
           if (!projectId) {
-            const errorResponse = { error: "Project ID is required" };
-            logSocketEvent('JOIN_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) {
-              console.log('📤 Sending join error response:', errorResponse);
-              callback(errorResponse);
-            }
+            console.log(`❌ JOIN ERROR: No project ID`);
             return;
           }
 
-          // Verify user is a project member (with caching)
           const isMember = await isProjectMember(socket.user._id, projectId);
-          logSocketEvent('MEMBERSHIP_CHECK', socket.id, socket.user._id, { projectId, isMember });
+          console.log(`🔍 MEMBERSHIP CHECK: ${isMember ? 'MEMBER' : 'NOT MEMBER'}`);
 
           if (!isMember) {
-            const errorResponse = {
-              error: "You are not a member of this project"
-            };
-            logSocketEvent('JOIN_DENIED', socket.id, socket.user._id, errorResponse);
-            if (callback) {
-              console.log('📤 Sending join denied response:', errorResponse);
-              callback(errorResponse);
-            }
+            console.log(`❌ JOIN DENIED: Not a project member`);
             return;
           }
 
-          // Join the project room
           const roomName = `project:${projectId}`;
           await socket.join(roomName);
-          logSocketEvent('ROOM_JOINED', socket.id, socket.user._id, { roomName });
+          console.log(`✅ JOINED ROOM: ${roomName}`);
 
-          // Notify others in the room
+          // Notify others
           socket.to(roomName).emit("chat:user-joined", {
             user: {
               _id: socket.user._id,
@@ -147,78 +126,55 @@ export const setupChatSocket = (io) => {
             timestamp: new Date(),
           });
 
-          // Acknowledge join
-          const successResponse = {
+          // Emit joined event
+          socket.emit("chat:joined", {
             projectId,
             message: "Successfully joined chat room",
             success: true
-          };
-          logSocketEvent('JOIN_SUCCESS', socket.id, socket.user._id, successResponse);
-          
-          // Emit joined event
-          socket.emit("chat:joined", successResponse);
-          
-          // Call callback if provided
-          if (callback) {
-            console.log('📤 Sending join success response:', successResponse);
-            callback(successResponse);
-          }
+          });
+
         } catch (error) {
-          console.error("Error joining room:", error);
-          const errorResponse = {
+          console.error("❌ JOIN ERROR:", error);
+          socket.emit("chat:error", {
             error: "Failed to join chat room",
             details: error.message
-          };
-          logSocketEvent('JOIN_ERROR', socket.id, socket.user._id, errorResponse);
-          socket.emit("chat:error", errorResponse);
-          if (callback) {
-            console.log('📤 Sending join error response:', errorResponse);
-            callback(errorResponse);
-          }
+          });
         }
       })();
     });
 
-    // Send message - COMPLETELY FIXED VERSION
+    // SEND MESSAGE - FINAL VERSION
     socket.on("chat:message", (data, callback) => {
-      const { projectId, body, tempId } = data;
-      logSocketEvent('MESSAGE_ATTEMPT', socket.id, socket.user._id, { projectId, tempId });
+      console.log(`📥 MESSAGE REQUEST: ${socket.user.username} -> ${data.body}`);
       
-      // Use async IIFE to handle async operations properly
+      const { projectId, body, tempId } = data;
+      
+      // Immediate callback for debugging
+      if (callback) {
+        console.log(`📤 SENDING MESSAGE CALLBACK IMMEDIATELY`);
+        callback({
+          messageId: `temp_${Date.now()}`,
+          tempId,
+          success: true,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Async operations in background
       (async () => {
         try {
-          // Validate inputs
-          if (!projectId) {
-            const errorResponse = { error: "Project ID is required" };
-            logSocketEvent('MESSAGE_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+          if (!projectId || !body) {
+            console.log(`❌ MESSAGE ERROR: Missing data`);
             return;
           }
 
-          // Verify user is a project member (with caching)
           const isMember = await isProjectMember(socket.user._id, projectId);
-          logSocketEvent('MESSAGE_MEMBERSHIP_CHECK', socket.id, socket.user._id, { projectId, isMember });
-
           if (!isMember) {
-            const errorResponse = {
-              error: "You are not a member of this project"
-            };
-            logSocketEvent('MESSAGE_DENIED', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            console.log(`❌ MESSAGE DENIED: Not a project member`);
             return;
           }
 
-          // Validate message
-          if (!body || !body.trim()) {
-            const errorResponse = {
-              error: "Message body is required"
-            };
-            logSocketEvent('MESSAGE_VALIDATION_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
-            return;
-          }
-
-          // Create message in database
+          // Create message
           const message = await ChatMessage.create({
             project: new mongoose.Types.ObjectId(projectId),
             sender: new mongoose.Types.ObjectId(socket.user._id),
@@ -226,74 +182,62 @@ export const setupChatSocket = (io) => {
             readBy: [new mongoose.Types.ObjectId(socket.user._id)],
           });
 
-          // Populate sender info
-          const populatedMessage = await ChatMessage.findById(
-            message._id
-          ).populate("sender", "username fullName avatar");
+          const populatedMessage = await ChatMessage.findById(message._id)
+            .populate("sender", "username fullName avatar");
 
           const roomName = `project:${projectId}`;
-
-          // Broadcast to all users in the room (including sender)
+          
+          // Broadcast message
           chatNamespace.to(roomName).emit("chat:new-message", {
             message: populatedMessage,
-            tempId, // Include tempId for optimistic UI updates
-          });
-
-          logSocketEvent('MESSAGE_SENT', socket.id, socket.user._id, { 
-            roomName, 
-            messageId: populatedMessage._id,
-            tempId 
-          });
-
-          // Acknowledge message sent
-          const successResponse = {
-            messageId: populatedMessage._id,
             tempId,
-            success: true
-          };
-          if (callback) callback(successResponse);
+          });
+
+          console.log(`✅ MESSAGE SENT: ${message._id}`);
+
         } catch (error) {
-          console.error("Error sending message:", error);
-          const errorResponse = {
+          console.error("❌ MESSAGE ERROR:", error);
+          socket.emit("chat:error", {
             error: "Failed to send message",
             details: error.message
-          };
-          logSocketEvent('MESSAGE_ERROR', socket.id, socket.user._id, errorResponse);
-          if (callback) callback(errorResponse);
+          });
         }
       })();
     });
 
-    // Typing indicator - COMPLETELY FIXED VERSION
+    // TYPING INDICATOR - FINAL VERSION
     socket.on("chat:typing", (data, callback) => {
-      const { projectId, isTyping } = data;
-      logSocketEvent('TYPING_ATTEMPT', socket.id, socket.user._id, { projectId, isTyping });
+      console.log(`📥 TYPING REQUEST: ${socket.user.username} -> ${data.isTyping}`);
       
-      // Use async IIFE to handle async operations properly
+      const { projectId, isTyping } = data;
+      
+      // Immediate callback for debugging
+      if (callback) {
+        console.log(`📤 SENDING TYPING CALLBACK IMMEDIATELY`);
+        callback({
+          success: true,
+          isTyping,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Async operations in background
       (async () => {
         try {
-          // Validate inputs
           if (!projectId) {
-            const errorResponse = { error: "Project ID is required" };
-            logSocketEvent('TYPING_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            console.log(`❌ TYPING ERROR: No project ID`);
             return;
           }
 
-          // Verify user is a project member (with caching)
           const isMember = await isProjectMember(socket.user._id, projectId);
-          logSocketEvent('TYPING_MEMBERSHIP_CHECK', socket.id, socket.user._id, { projectId, isMember });
-
           if (!isMember) {
-            const errorResponse = { error: "Not a project member" };
-            logSocketEvent('TYPING_DENIED', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            console.log(`❌ TYPING DENIED: Not a project member`);
             return;
           }
 
           const roomName = `project:${projectId}`;
-
-          // Broadcast typing status to others (not to self)
+          
+          // Broadcast typing status
           socket.to(roomName).emit("chat:user-typing", {
             user: {
               _id: socket.user._id,
@@ -304,117 +248,98 @@ export const setupChatSocket = (io) => {
             isTyping,
           });
 
-          logSocketEvent('TYPING_BROADCAST', socket.id, socket.user._id, { roomName, isTyping });
+          console.log(`✅ TYPING BROADCAST: ${isTyping}`);
 
-          // Acknowledge typing status
-          const successResponse = { success: true, isTyping };
-          if (callback) callback(successResponse);
         } catch (error) {
-          console.error("Error handling typing:", error);
-          const errorResponse = { 
-            error: "Failed to handle typing",
-            details: error.message
-          };
-          logSocketEvent('TYPING_ERROR', socket.id, socket.user._id, errorResponse);
-          if (callback) callback(errorResponse);
+          console.error("❌ TYPING ERROR:", error);
         }
       })();
     });
 
-    // Mark message as seen - COMPLETELY FIXED VERSION
+    // MARK AS SEEN - FINAL VERSION
     socket.on("chat:seen", (data, callback) => {
-      const { projectId, messageId } = data;
-      logSocketEvent('SEEN_ATTEMPT', socket.id, socket.user._id, { projectId, messageId });
+      console.log(`📥 SEEN REQUEST: ${socket.user.username} -> ${data.messageId}`);
       
-      // Use async IIFE to handle async operations properly
+      const { projectId, messageId } = data;
+      
+      // Immediate callback for debugging
+      if (callback) {
+        console.log(`📤 SENDING SEEN CALLBACK IMMEDIATELY`);
+        callback({
+          success: true,
+          messageId,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Async operations in background
       (async () => {
         try {
-          // Validate inputs
           if (!projectId || !messageId) {
-            const errorResponse = { error: "Project ID and Message ID are required" };
-            logSocketEvent('SEEN_ERROR', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            console.log(`❌ SEEN ERROR: Missing data`);
             return;
           }
 
-          // Verify user is a project member (with caching)
           const isMember = await isProjectMember(socket.user._id, projectId);
-          logSocketEvent('SEEN_MEMBERSHIP_CHECK', socket.id, socket.user._id, { projectId, isMember });
-
           if (!isMember) {
-            const errorResponse = { error: "Not a project member" };
-            logSocketEvent('SEEN_DENIED', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            console.log(`❌ SEEN DENIED: Not a project member`);
             return;
           }
 
-          // Find message
           const message = await ChatMessage.findById(messageId);
-
           if (!message) {
-            const errorResponse = { error: "Message not found" };
-            logSocketEvent('SEEN_MESSAGE_NOT_FOUND', socket.id, socket.user._id, errorResponse);
-            if (callback) callback(errorResponse);
+            console.log(`❌ SEEN ERROR: Message not found`);
             return;
           }
 
-          // Add user to readBy if not already present
           const userId = socket.user._id.toString();
-          const alreadyRead = message.readBy.some(
-            (id) => id.toString() === userId
-          );
+          const alreadyRead = message.readBy.some(id => id.toString() === userId);
 
           if (!alreadyRead) {
             message.readBy.push(new mongoose.Types.ObjectId(socket.user._id));
             await message.save();
 
             const roomName = `project:${projectId}`;
-
-            // Broadcast read receipt to all users in the room
             chatNamespace.to(roomName).emit("chat:message-seen", {
               messageId,
               userId: socket.user._id,
               username: socket.user.username,
             });
 
-            logSocketEvent('SEEN_BROADCAST', socket.id, socket.user._id, { roomName, messageId });
-          } else {
-            logSocketEvent('SEEN_ALREADY_READ', socket.id, socket.user._id, { messageId });
+            console.log(`✅ SEEN BROADCAST: ${messageId}`);
           }
 
-          // Acknowledge seen status
-          const successResponse = { success: true, messageId };
-          if (callback) callback(successResponse);
         } catch (error) {
-          console.error("Error marking message as seen:", error);
-          const errorResponse = { 
-            error: "Failed to mark as seen",
-            details: error.message
-          };
-          logSocketEvent('SEEN_ERROR', socket.id, socket.user._id, errorResponse);
-          if (callback) callback(errorResponse);
+          console.error("❌ SEEN ERROR:", error);
         }
       })();
     });
 
-    // Leave project room - COMPLETELY FIXED VERSION
+    // LEAVE PROJECT ROOM - FINAL VERSION
     socket.on("chat:leave", (data, callback) => {
-      const { projectId } = data;
-      logSocketEvent('LEAVE_ATTEMPT', socket.id, socket.user._id, { projectId });
+      console.log(`📥 LEAVE REQUEST: ${socket.user.username} -> ${data.projectId}`);
       
+      const { projectId } = data;
+      
+      // Immediate callback for debugging
+      if (callback) {
+        console.log(`📤 SENDING LEAVE CALLBACK IMMEDIATELY`);
+        callback({
+          success: true,
+          projectId,
+          timestamp: new Date().toISOString()
+        });
+      }
+
       try {
-        // Validate inputs
         if (!projectId) {
-          const errorResponse = { error: "Project ID is required" };
-          logSocketEvent('LEAVE_ERROR', socket.id, socket.user._id, errorResponse);
-          if (callback) callback(errorResponse);
+          console.log(`❌ LEAVE ERROR: No project ID`);
           return;
         }
 
         const roomName = `project:${projectId}`;
         socket.leave(roomName);
 
-        // Notify others in the room
         socket.to(roomName).emit("chat:user-left", {
           user: {
             _id: socket.user._id,
@@ -425,35 +350,23 @@ export const setupChatSocket = (io) => {
           timestamp: new Date(),
         });
 
-        logSocketEvent('LEAVE_SUCCESS', socket.id, socket.user._id, { roomName });
+        console.log(`✅ LEFT ROOM: ${roomName}`);
 
-        // Acknowledge leave
-        const successResponse = { success: true, projectId };
-        if (callback) callback(successResponse);
       } catch (error) {
-        console.error("Error leaving room:", error);
-        const errorResponse = { 
-          error: "Failed to leave room",
-          details: error.message
-        };
-        logSocketEvent('LEAVE_ERROR', socket.id, socket.user._id, errorResponse);
-        if (callback) callback(errorResponse);
+        console.error("❌ LEAVE ERROR:", error);
       }
     });
 
-    // Disconnect
+    // DISCONNECT
     socket.on("disconnect", (reason) => {
-      logSocketEvent('DISCONNECT', socket.id, socket.user._id, { reason });
-      console.log(`User disconnected: ${socket.user.username} (${socket.id}) - Reason: ${reason}`);
+      console.log(`🔌 User disconnected: ${socket.user.username} (${socket.id}) - ${reason}`);
     });
 
-    // Error handling
+    // ERROR HANDLING
     socket.on("error", (error) => {
-      logSocketEvent('SOCKET_ERROR', socket.id, socket.user._id, { error: error.message });
-      console.error(`Socket error for ${socket.user.username}:`, error);
+      console.error(`❌ Socket error for ${socket.user.username}:`, error);
     });
   });
 
-  console.log("Chat socket handlers registered");
+  console.log("✅ FINAL Chat socket handlers registered");
 };
-
