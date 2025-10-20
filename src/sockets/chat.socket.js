@@ -78,158 +78,158 @@ export const setupChatSocket = (io) => {
   chatNamespace.on("connection", (socket) => {
     console.log(`🔌 User connected: ${socket.user.username} (${socket.id})`);
 
-    // JOIN PROJECT ROOM - FIXED VERSION
+    // JOIN PROJECT ROOM - CALLBACK WORKING VERSION
     socket.on("chat:join", (data, callback) => {
       const { projectId } = data;
       console.log(`📥 JOIN REQUEST: ${socket.user.username} -> ${projectId}`);
       
-      // Handle async operations properly
+      // Handle async operations in IIFE
       (async () => {
-        try {
-          if (!projectId) {
-            console.log(`❌ JOIN ERROR: No project ID`);
-            const errorResponse = { error: "Project ID is required" };
-            if (callback) {
-              console.log(`📤 SENDING JOIN ERROR CALLBACK`);
-              callback(errorResponse);
-            }
-            return;
-          }
-
-          const isMember = await isProjectMember(socket.user._id, projectId);
-          console.log(`🔍 MEMBERSHIP CHECK: ${isMember ? 'MEMBER' : 'NOT MEMBER'}`);
-
-          if (!isMember) {
-            console.log(`❌ JOIN DENIED: Not a project member`);
-            const errorResponse = { error: "Not a project member" };
-            if (callback) {
-              console.log(`📤 SENDING JOIN DENIED CALLBACK`);
-              callback(errorResponse);
-            }
-            return;
-          }
-
-          const roomName = `project:${projectId}`;
-          await socket.join(roomName);
-          console.log(`✅ JOINED ROOM: ${roomName}`);
-
-          // Send success callback FIRST
-          const successResponse = {
-            projectId,
-            message: "Successfully joined chat room",
-            success: true,
-            timestamp: new Date().toISOString()
-          };
-          
-          if (callback) {
-            console.log(`📤 SENDING JOIN SUCCESS CALLBACK`);
-            callback(successResponse);
-          }
-
-          // Notify others in the room
-          socket.to(roomName).emit("chat:user-joined", {
-            user: {
-              _id: socket.user._id,
-              username: socket.user.username,
-              fullName: socket.user.fullName,
-              avatar: socket.user.avatar,
-            },
-            timestamp: new Date(),
-          });
-
-          // Emit joined event to self
-          socket.emit("chat:joined", successResponse);
-
-        } catch (error) {
-          console.error("❌ JOIN ERROR:", error);
-          const errorResponse = {
-            error: "Failed to join chat room", 
-            details: error.message
-          };
+      try {
+        if (!projectId) {
+          console.log(`❌ JOIN ERROR: No project ID`);
+          const errorResponse = { error: "Project ID is required" };
           if (callback) {
             console.log(`📤 SENDING JOIN ERROR CALLBACK`);
             callback(errorResponse);
           }
-          socket.emit("chat:error", errorResponse);
+          return;
         }
+
+        const isMember = await isProjectMember(socket.user._id, projectId);
+        console.log(`🔍 MEMBERSHIP CHECK: ${isMember ? 'MEMBER' : 'NOT MEMBER'}`);
+
+        if (!isMember) {
+          console.log(`❌ JOIN DENIED: Not a project member`);
+          const errorResponse = { error: "Not a project member" };
+          if (callback) {
+            console.log(`📤 SENDING JOIN DENIED CALLBACK`);
+            callback(errorResponse);
+          }
+          return;
+        }
+
+        const roomName = `project:${projectId}`;
+        await socket.join(roomName);
+        console.log(`✅ JOINED ROOM: ${roomName}`);
+
+        // Send success callback FIRST
+        const successResponse = {
+          projectId,
+          message: "Successfully joined chat room",
+          success: true,
+          timestamp: new Date().toISOString()
+        };
+        
+        if (callback) {
+          console.log(`📤 SENDING JOIN SUCCESS CALLBACK`);
+          callback(successResponse);
+        }
+
+        // Notify others in the room
+        socket.to(roomName).emit("chat:user-joined", {
+          user: {
+            _id: socket.user._id,
+            username: socket.user.username,
+            fullName: socket.user.fullName,
+            avatar: socket.user.avatar,
+          },
+          timestamp: new Date(),
+        });
+
+        // Emit joined event to self
+        socket.emit("chat:joined", successResponse);
+
+      } catch (error) {
+        console.error("❌ JOIN ERROR:", error);
+        const errorResponse = {
+          error: "Failed to join chat room", 
+          details: error.message
+        };
+        if (callback) {
+          console.log(`📤 SENDING JOIN ERROR CALLBACK`);
+          callback(errorResponse);
+        }
+        socket.emit("chat:error", errorResponse);
+      }
       })();
     });
 
-    // SEND MESSAGE - FIXED VERSION
+    // SEND MESSAGE - CALLBACK WORKING VERSION
     socket.on("chat:message", (data, callback) => {
       const { projectId, body, tempId } = data;
       console.log(`📥 MESSAGE REQUEST: ${socket.user.username} -> ${body}`);
       
-      // Handle async operations properly
+      // Handle async operations in IIFE
       (async () => {
-        try {
-          if (!projectId || !body) {
-            console.log(`❌ MESSAGE ERROR: Missing data`);
-            const errorResponse = { error: "Project ID and message body are required" };
-            if (callback) {
-              console.log(`📤 SENDING MESSAGE ERROR CALLBACK`);
-              callback(errorResponse);
-            }
-            return;
-          }
-
-          const isMember = await isProjectMember(socket.user._id, projectId);
-          if (!isMember) {
-            console.log(`❌ MESSAGE DENIED: Not a project member`);
-            const errorResponse = { error: "Not a project member" };
-            if (callback) {
-              console.log(`📤 SENDING MESSAGE DENIED CALLBACK`);
-              callback(errorResponse);
-            }
-            return;
-          }
-
-          // Create message in database
-          const message = await ChatMessage.create({
-            project: new mongoose.Types.ObjectId(projectId),
-            sender: new mongoose.Types.ObjectId(socket.user._id),
-            body: body.trim(),
-            readBy: [new mongoose.Types.ObjectId(socket.user._id)],
-          });
-
-          const populatedMessage = await ChatMessage.findById(message._id)
-            .populate("sender", "username fullName avatar");
-
-          // Send success callback FIRST
-          const successResponse = {
-            messageId: message._id,
-            tempId,
-            success: true,
-            timestamp: new Date().toISOString()
-          };
-          
-          if (callback) {
-            console.log(`📤 SENDING MESSAGE SUCCESS CALLBACK`);
-            callback(successResponse);
-          }
-
-          const roomName = `project:${projectId}`;
-          
-          // Broadcast message to ALL users in the room (including sender)
-          chatNamespace.in(roomName).emit("chat:new-message", {
-            message: populatedMessage,
-            tempId,
-          });
-
-          console.log(`✅ MESSAGE SENT: ${message._id}`);
-
-        } catch (error) {
-          console.error("❌ MESSAGE ERROR:", error);
-          const errorResponse = {
-            error: "Failed to send message", 
-            details: error.message
-          };
+      try {
+        if (!projectId || !body) {
+          console.log(`❌ MESSAGE ERROR: Missing data`);
+          const errorResponse = { error: "Project ID and message body are required" };
           if (callback) {
             console.log(`📤 SENDING MESSAGE ERROR CALLBACK`);
             callback(errorResponse);
           }
-          socket.emit("chat:error", errorResponse);
+          return;
         }
+
+        const isMember = await isProjectMember(socket.user._id, projectId);
+        if (!isMember) {
+          console.log(`❌ MESSAGE DENIED: Not a project member`);
+          const errorResponse = { error: "Not a project member" };
+          if (callback) {
+            console.log(`📤 SENDING MESSAGE DENIED CALLBACK`);
+            callback(errorResponse);
+          }
+          return;
+        }
+
+        // Create message in database
+        const message = await ChatMessage.create({
+          project: new mongoose.Types.ObjectId(projectId),
+          sender: new mongoose.Types.ObjectId(socket.user._id),
+          body: body.trim(),
+          readBy: [new mongoose.Types.ObjectId(socket.user._id)],
+        });
+
+        const populatedMessage = await ChatMessage.findById(message._id)
+          .populate("sender", "username fullName avatar");
+
+        // Send success callback FIRST
+        const successResponse = {
+          messageId: message._id,
+          tempId,
+          success: true,
+          timestamp: new Date().toISOString()
+        };
+        
+        if (callback) {
+          console.log(`📤 SENDING MESSAGE SUCCESS CALLBACK`);
+          callback(successResponse);
+        }
+
+        const roomName = `project:${projectId}`;
+        
+        // Broadcast message to ALL users in the room (including sender)
+        chatNamespace.to(roomName).emit("chat:new-message", {
+          message: populatedMessage,
+          tempId,
+        });
+
+        console.log(`✅ MESSAGE SENT: ${message._id}`);
+
+      } catch (error) {
+        console.error("❌ MESSAGE ERROR:", error);
+        const errorResponse = {
+          error: "Failed to send message", 
+          details: error.message
+        };
+        if (callback) {
+          console.log(`📤 SENDING MESSAGE ERROR CALLBACK`);
+          callback(errorResponse);
+        }
+        socket.emit("chat:error", errorResponse);
+      }
       })();
     });
 
