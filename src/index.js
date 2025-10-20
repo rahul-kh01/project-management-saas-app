@@ -49,7 +49,7 @@ connectDB()
   .then(() => {
     // Optionally seed test users on startup (idempotent) when enabled
     if (String(process.env.SEED_TEST_USERS).toLowerCase() === "true") {
-      const seeder = spawn("node", ["create-test-users.js"], {
+      const seeder = spawn("node", ["src/create-test-users.js"], {
         stdio: "inherit",
         env: process.env,
       });

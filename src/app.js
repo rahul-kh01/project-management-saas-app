@@ -7,6 +7,9 @@ import { sanitizeInputs, securityHeaders, requestSizeLimiter } from "./middlewar
 
 const app = express();
 
+// Trust proxy for rate limiting behind reverse proxy (Render, etc.)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
