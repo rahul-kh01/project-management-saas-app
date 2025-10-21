@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { chatService } from '../../services/chatService';
+import { chatService } from '../../services/chatService.production';
 import { useAuth } from '../../contexts/AuthContext';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';

@@ -50,3 +50,35 @@ coverage/
 # Docker / Deployment
 # ==========================
 docker-data/
+
+# ==========================
+# Project-specific Excludes
+# ==========================
+# Build outputs and logs
+logs/
+frontend/dist/
+frontend/frontend.log
+
+# Debug/test scripts
+debug-*.js
+test-*.js
+simple-socket-test.js
+final-socket-test.js
+deploy-verification.js
+
+# Socket debug variants (keep production files tracked)
+src/sockets/chat.socket.debug.js
+src/sockets/chat.socket.fixed.js
+src/sockets/chat.socket.final.js
+
+# Misc temp files in public/images (keep actual images)
+public/images/*.sh
+public/images/*.txt
+public/images/*.py
+
+# Local vendored libs (ignore if not needed)
+axios/
+socket.io-client/
+
+# Editor-specific
+.cursorignore

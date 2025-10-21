@@ -8,8 +8,8 @@
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
-const API_BASE_URL = 'https://project-management-saas-app.onrender.com';
-const FRONTEND_URL = 'https://project-management-saas-app-1.onrender.com';
+const API_BASE_URL = 'http://localhost:3000';
+const FRONTEND_URL = 'http://localhost:5173';
 
 // Test credentials for two users
 const testUsers = [

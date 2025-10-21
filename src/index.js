@@ -19,25 +19,50 @@ const port = process.env.PORT || 3000;
 // Create HTTP server
 const httpServer = createServer(app);
 
-// Initialize Socket.IO with optimized CORS and performance settings
+// Initialize Socket.IO with production-grade configuration
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.CORS_ORIGIN?.split(",") || "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Origin"],
   },
-  // Performance optimizations
-  pingTimeout: 60000,        // Increase ping timeout
-  pingInterval: 25000,        // Increase ping interval
-  upgradeTimeout: 10000,      // Increase upgrade timeout
-  maxHttpBufferSize: 1e6,     // 1MB buffer size
-  allowEIO3: true,            // Allow Engine.IO v3 clients
+  // Production performance optimizations
+  pingTimeout: 60000,           // 60 seconds ping timeout
+  pingInterval: 25000,          // 25 seconds ping interval
+  upgradeTimeout: 10000,        // 10 seconds upgrade timeout
+  maxHttpBufferSize: 1e6,       // 1MB buffer size
+  allowEIO3: true,              // Allow Engine.IO v3 clients
   transports: ['websocket', 'polling'], // Enable both transports
-  // Connection state recovery
+  // Connection state recovery for production
   connectionStateRecovery: {
     maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
     skipMiddlewares: true,
   },
+  // Additional production settings
+  serveClient: false,           // Don't serve client files
+  allowRequest: (req, fn) => {
+    // Custom request validation for production
+    const origin = req.headers.origin;
+    const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"];
+    
+    if (allowedOrigins.includes(origin) || !origin) {
+      fn(null, true);
+    } else {
+      fn(null, false);
+    }
+  },
+  // Rate limiting for production
+  maxConnections: 1000,         // Max connections per namespace
+  // Compression for production
+  compression: true,
+  // Additional security
+  cookie: {
+    name: 'io',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  }
 });
 
 // Setup chat socket handlers

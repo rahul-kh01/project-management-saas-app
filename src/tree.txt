@@ -1,0 +1,198 @@
+maverick@maverick-laptop:/mnt/E/Project/Temp/project-management$ tree -L 20 -I "node_modules|docs"
+.
+├── axios
+├── build.sh
+├── CHAT_SYSTEM_ANALYSIS.md
+├── debug-api-500.js
+├── debug-client.js
+├── debug-server.js
+├── debug-socket-simple.js
+├── debug-socket-test.js
+├── DEPLOYMENT_GUIDE.md
+├── deploy-to-render.sh
+├── deploy-verification.js
+├── docker-compose.dev.yml
+├── docker-compose.override.yml.example
+├── docker-compose.yml
+├── docker-entrypoint.sh
+├── Dockerfile
+├── Dockerfile.dev
+├── Dockerfile.render
+├── env.example
+├── env.production.example
+├── env.render.example
+├── final-socket-test.js
+├── FORCE_DEPLOYMENT.md
+├── frontend
+│   ├── dist
+│   │   ├── assets
+│   │   │   ├── index-BAvxpckg.js
+│   │   │   └── index-D5k63twj.css
+│   │   ├── index.html
+│   │   └── vite.svg
+│   ├── FEATURES_CHECKLIST.md
+│   ├── frontend.log
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── public
+│   │   └── vite.svg
+│   ├── README.md
+│   ├── src
+│   │   ├── App.jsx
+│   │   ├── components
+│   │   │   ├── common
+│   │   │   │   ├── Badge.jsx
+│   │   │   │   ├── Button.jsx
+│   │   │   │   ├── Card.jsx
+│   │   │   │   ├── Input.jsx
+│   │   │   │   └── Modal.jsx
+│   │   │   ├── layout
+│   │   │   │   ├── Layout.jsx
+│   │   │   │   └── Navbar.jsx
+│   │   │   ├── project
+│   │   │   │   ├── ChatTab.jsx
+│   │   │   │   ├── IssueBoard.jsx
+│   │   │   │   ├── IssueDetail.jsx
+│   │   │   │   ├── IssueForm.jsx
+│   │   │   │   ├── IssuesTab.jsx
+│   │   │   │   ├── MembersTab.jsx
+│   │   │   │   ├── MessageInput.jsx
+│   │   │   │   ├── MessageList.jsx
+│   │   │   │   ├── NotesTab.jsx
+│   │   │   │   ├── OverviewTab.jsx
+│   │   │   │   ├── TaskDetail.jsx
+│   │   │   │   ├── TasksTab.jsx
+│   │   │   │   └── TypingIndicator.jsx
+│   │   │   └── routes
+│   │   │       └── ProtectedRoute.jsx
+│   │   ├── config
+│   │   │   └── api.js
+│   │   ├── contexts
+│   │   │   └── AuthContext.jsx
+│   │   ├── index.css
+│   │   ├── main.jsx
+│   │   ├── pages
+│   │   │   ├── auth
+│   │   │   │   ├── ForgotPassword.jsx
+│   │   │   │   ├── Login.jsx
+│   │   │   │   ├── Register.jsx
+│   │   │   │   └── ResetPassword.jsx
+│   │   │   ├── Home.jsx
+│   │   │   ├── Profile.jsx
+│   │   │   ├── ProjectDetail.jsx
+│   │   │   ├── Projects.jsx
+│   │   │   └── Settings.jsx
+│   │   ├── services
+│   │   │   ├── chatService.js
+│   │   │   ├── chatService.production.js
+│   │   │   ├── issueService.js
+│   │   │   ├── noteService.js
+│   │   │   ├── projectService.js
+│   │   │   └── taskService.js
+│   │   └── utils
+│   │       ├── constants.js
+│   │       └── helpers.js
+│   ├── tailwind.config.js
+│   └── vite.config.js
+├── logs
+├── Makefile
+├── nginx
+│   ├── nginx.conf
+│   └── nginx.dev.conf
+├── nginx.conf.example
+├── package.json
+├── package-lock.json
+├── public
+│   └── images
+│       ├── 1760110033234-Screenshot 2025-07-26 at 12-05-34 (4) Instagram.png
+│       ├── 1760122644252-Credit+Claims2
+│       ├── clean-1760214021017-174456925.sh
+│       ├── kde-1760213837041-689528871.txt
+│       └── play-1760214105997-759986325.py
+├── render.yaml
+├── security-audit.sh
+├── simple-socket-test.js
+├── socket.io-client
+├── src
+│   ├── app.js
+│   ├── controllers
+│   │   ├── auth.controllers.js
+│   │   ├── chat.controllers.js
+│   │   ├── healthcheck.controllers.js
+│   │   ├── issue.controllers.js
+│   │   ├── note.controllers.js
+│   │   ├── project.controllers.js
+│   │   └── task.controllers.js
+│   ├── create-test-users.js
+│   ├── db
+│   │   └── index.js
+│   ├── index.js
+│   ├── middlewares
+│   │   ├── auth.middleware.js
+│   │   ├── error.middleware.js
+│   │   ├── formdata-parser.middleware.js
+│   │   ├── multer.middleware.js
+│   │   ├── security.middleware.js
+│   │   └── validator.middleware.js
+│   ├── models
+│   │   ├── chatmessage.models.js
+│   │   ├── issueActivity.models.js
+│   │   ├── issueComment.models.js
+│   │   ├── issue.models.js
+│   │   ├── note.models.js
+│   │   ├── projectmember.models.js
+│   │   ├── project.models.js
+│   │   ├── subtask.models.js
+│   │   ├── task.models.js
+│   │   └── user.models.js
+│   ├── routes
+│   │   ├── auth.routes.js
+│   │   ├── chat.routes.js
+│   │   ├── healthcheck.routes.js
+│   │   ├── issue.routes.js
+│   │   ├── note.routes.js
+│   │   ├── project.routes.js
+│   │   └── task.routes.js
+│   ├── sockets
+│   │   ├── chat.socket.debug.js
+│   │   ├── chat.socket.final.js
+│   │   ├── chat.socket.fixed.js
+│   │   ├── chat.socket.js
+│   │   └── chat.socket.production.js
+│   ├── utils
+│   │   ├── api-error.js
+│   │   ├── api-response.js
+│   │   ├── async-handler.js
+│   │   ├── cache.js
+│   │   ├── constants.js
+│   │   ├── env-validator.js
+│   │   ├── logger.js
+│   │   ├── mail.js
+│   │   ├── redis-cache.js
+│   │   └── secure-validator.js
+│   └── validators
+│       └── index.js
+├── start-production.sh
+├── test-chat-fixes.js
+├── test-chat-optimized.js
+├── test-chat-with-membership.js
+├── test-complete-system.js
+├── test-debug-socket.js
+├── test-deployment-socket.js
+├── test-issue-tracker.js
+├── test-local-fix.js
+├── test-multi-user-chat.js
+├── test-production-chat.js
+├── test-server-logs.js
+├── test-server-response.js
+├── test-simple-socket.js
+├── test-socket-basic.js
+├── test-socket-callback.js
+├── test-socket-performance.js
+└── WARP.md
+
+30 directories, 163 files
+maverick@maverick-laptop:/mnt/E/Project/Temp/project-management$ 
+
