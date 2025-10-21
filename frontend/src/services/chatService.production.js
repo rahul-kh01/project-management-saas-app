@@ -22,7 +22,6 @@ const maxReconnectAttempts = 5;
 // Enhanced connection configuration for production
 const getSocketConfig = (authToken) => ({
   path: '/socket.io/',
-  namespace: '/chat',
   auth: {
     token: authToken,
   },
@@ -59,7 +58,8 @@ export const chatService = {
     token = authToken;
     const serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-    socket = io(serverUrl, getSocketConfig(authToken));
+    // Connect to the /chat namespace
+    socket = io(serverUrl + '/chat', getSocketConfig(authToken));
 
     // Enhanced connection events with better error handling
     socket.on('connect', () => {
