@@ -70,7 +70,9 @@ export const chatService = {
     const serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
     // Connect to the /chat namespace
-    socket = io(serverUrl + '/chat', getSocketConfig(authToken));
+    // Remove trailing slash if present to avoid double slashes
+    const cleanUrl = serverUrl.replace(/\/$/, '');
+    socket = io(cleanUrl + '/chat', getSocketConfig(authToken));
 
     // Enhanced connection events with better error handling
     socket.on('connect', () => {
@@ -79,7 +81,7 @@ export const chatService = {
       reconnectAttempts = 0;
       
       // Process queued messages
-      this.processMessageQueue();
+      chatService.processMessageQueue();
     });
 
     socket.on('disconnect', (reason) => {
@@ -100,7 +102,7 @@ export const chatService = {
       // Handle specific error types
       if (error.message === 'Authentication failed') {
         console.error('Authentication failed, please login again');
-        this.handleAuthError();
+        chatService.handleAuthError();
       }
       
       // Exponential backoff for reconnection
@@ -128,7 +130,7 @@ export const chatService = {
 
     socket.on('reconnect_failed', () => {
       console.error('Socket reconnection failed');
-      this.handleConnectionFailure();
+      chatService.handleConnectionFailure();
     });
 
     socket.on('chat:error', (data) => {
@@ -196,7 +198,7 @@ export const chatService = {
       return Promise.reject(new Error('Socket not connected'));
     }
 
-    if (!this.isConnected()) {
+    if (!chatService.isConnected()) {
       console.error('Socket not connected, attempting to reconnect...');
       socket.connect();
       return Promise.reject(new Error('Socket not connected, please try again'));
@@ -253,9 +255,9 @@ export const chatService = {
       return Promise.reject(new Error('Socket not connected'));
     }
 
-    if (!this.isConnected()) {
+    if (!chatService.isConnected()) {
       console.error('Socket not connected, queuing message');
-      this.queueMessage({ projectId, body, tempId });
+      chatService.queueMessage({ projectId, body, tempId });
       return Promise.reject(new Error('Socket not connected, message queued'));
     }
 
@@ -296,7 +298,7 @@ export const chatService = {
   typing: ({ projectId, isTyping }) => {
     if (!socket) return Promise.reject(new Error('Socket not connected'));
 
-    if (!this.isConnected()) {
+    if (!chatService.isConnected()) {
       console.error('Socket not connected for typing indicator');
       return Promise.reject(new Error('Socket not connected'));
     }
@@ -450,7 +452,7 @@ export const chatService = {
   // Get connection status
   getConnectionStatus: () => {
     return {
-      connected: this.isConnected(),
+      connected: chatService.isConnected(),
       socketId: socket?.id,
       reconnectAttempts,
       queuedMessages: messageQueue.length
