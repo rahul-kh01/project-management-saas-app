@@ -1,6 +1,13 @@
 import { User } from "../models/user.models.js";
 import { Project } from "../models/project.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
+import { Task } from "../models/task.models.js";
+import { SubTask } from "../models/subtask.models.js";
+import { Issue } from "../models/issue.models.js";
+import { IssueComment } from "../models/issueComment.models.js";
+import { IssueActivity } from "../models/issueActivity.models.js";
+import { Note } from "../models/note.models.js";
+import { ChatMessage } from "../models/chatmessage.models.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
@@ -120,13 +127,62 @@ const updateProject = asyncHandler(async (req, res) => {
 const deleteProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
 
-  const project = await Project.findByIdAndDelete(projectId);
+  // Check if project exists
+  const project = await Project.findById(projectId);
   if (!project) {
     throw new ApiError(404, "Project not found");
   }
-  return res
-    .status(200)
-    .json(new ApiResponse(200, project, "Project deleted successfully"));
+
+  // Start a session for transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Delete all related data in order
+    // 1. Delete chat messages
+    await ChatMessage.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    
+    // 2. Delete notes
+    await Note.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    
+    // 3. Delete issue activities
+    await IssueActivity.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    
+    // 4. Delete issue comments
+    await IssueComment.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    
+    // 5. Delete issues
+    await Issue.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    
+    // 6. Delete subtasks (get all tasks first, then delete their subtasks)
+    const tasks = await Task.find({ project: new mongoose.Types.ObjectId(projectId) }, { _id: 1 }, { session });
+    const taskIds = tasks.map(task => task._id);
+    if (taskIds.length > 0) {
+      await SubTask.deleteMany({ task: { $in: taskIds } }, { session });
+    }
+    
+    // 7. Delete tasks
+    await Task.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    
+    // 8. Delete project members
+    await ProjectMember.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    
+    // 9. Finally delete the project itself
+    await Project.findByIdAndDelete(projectId, { session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+    
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { _id: projectId, name: project.name }, "Project and all related data deleted successfully"));
+  } catch (error) {
+    // Rollback the transaction on error
+    await session.abortTransaction();
+    throw new ApiError(500, "Failed to delete project: " + error.message);
+  } finally {
+    session.endSession();
+  }
 });
 
 const addMembersToProject = asyncHandler(async (req, res) => {
