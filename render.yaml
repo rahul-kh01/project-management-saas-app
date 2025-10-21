@@ -27,10 +27,7 @@ services:
       - key: REFRESH_TOKEN_EXPIRY
         value: 30d
       - key: CORS_ORIGIN
-        fromService:
-          type: static
-          name: project-camp-frontend
-          property: host
+        sync: false  # Set this manually: https://your-frontend-url.onrender.com,http://localhost:5173
       - key: MAILTRAP_SMTP_HOST
         value: smtp.mailtrap.io
       - key: MAILTRAP_SMTP_PORT
@@ -42,11 +39,7 @@ services:
       - key: MAILTRAP_SENDER_EMAIL
         value: noreply@projectcamp.com
       - key: FORGOT_PASSWORD_REDIRECT_URL
-        fromService:
-          type: static
-          name: project-camp-frontend
-          property: host
-          path: /reset-password
+        sync: false  # Set this manually: https://your-frontend-url.onrender.com/reset-password
 
   # Frontend Static Site
   - type: static
@@ -55,7 +48,4 @@ services:
     staticPublishPath: ./frontend/dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: project-camp-backend
-          property: host
+        sync: false  # Set this manually in Render dashboard to: https://your-backend-url.onrender.com

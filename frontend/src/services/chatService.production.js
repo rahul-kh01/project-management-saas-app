@@ -67,7 +67,12 @@ export const chatService = {
     // Create new socket connection
     console.log('Creating new socket connection...');
     token = authToken;
-    const serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    
+    // Ensure URL has protocol (https:// for production, http:// for localhost)
+    let serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+      serverUrl = `https://${serverUrl}`;
+    }
 
     // Connect to the /chat namespace
     // Remove trailing slash if present to avoid double slashes
