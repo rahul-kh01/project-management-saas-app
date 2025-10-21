@@ -2,11 +2,11 @@ import { User } from "../models/user.models.js";
 import { Project } from "../models/project.models.js";
 import { ProjectMember } from "../models/projectmember.models.js";
 import { Task } from "../models/task.models.js";
-import { SubTask } from "../models/subtask.models.js";
+import { Subtask } from "../models/subtask.models.js";
 import { Issue } from "../models/issue.models.js";
 import { IssueComment } from "../models/issueComment.models.js";
 import { IssueActivity } from "../models/issueActivity.models.js";
-import { Note } from "../models/note.models.js";
+import { ProjectNote } from "../models/note.models.js";
 import { ChatMessage } from "../models/chatmessage.models.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
@@ -143,31 +143,37 @@ const deleteProject = asyncHandler(async (req, res) => {
     await ChatMessage.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
     
     // 2. Delete notes
-    await Note.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    await ProjectNote.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
     
-    // 3. Delete issue activities
-    await IssueActivity.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    // 3. Get all issues for this project to delete their activities and comments
+    const issues = await Issue.find({ projectId: new mongoose.Types.ObjectId(projectId) }, { _id: 1 }, { session });
+    const issueIds = issues.map(issue => issue._id);
     
-    // 4. Delete issue comments
-    await IssueComment.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    if (issueIds.length > 0) {
+      // 4. Delete issue activities
+      await IssueActivity.deleteMany({ issueId: { $in: issueIds } }, { session });
+      
+      // 5. Delete issue comments
+      await IssueComment.deleteMany({ issueId: { $in: issueIds } }, { session });
+    }
     
-    // 5. Delete issues
-    await Issue.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
+    // 6. Delete issues
+    await Issue.deleteMany({ projectId: new mongoose.Types.ObjectId(projectId) }, { session });
     
-    // 6. Delete subtasks (get all tasks first, then delete their subtasks)
+    // 7. Delete subtasks (get all tasks first, then delete their subtasks)
     const tasks = await Task.find({ project: new mongoose.Types.ObjectId(projectId) }, { _id: 1 }, { session });
     const taskIds = tasks.map(task => task._id);
     if (taskIds.length > 0) {
-      await SubTask.deleteMany({ task: { $in: taskIds } }, { session });
+      await Subtask.deleteMany({ task: { $in: taskIds } }, { session });
     }
     
-    // 7. Delete tasks
+    // 8. Delete tasks
     await Task.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
     
-    // 8. Delete project members
+    // 9. Delete project members
     await ProjectMember.deleteMany({ project: new mongoose.Types.ObjectId(projectId) }, { session });
     
-    // 9. Finally delete the project itself
+    // 10. Finally delete the project itself
     await Project.findByIdAndDelete(projectId, { session });
 
     // Commit the transaction
