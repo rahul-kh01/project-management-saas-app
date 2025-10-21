@@ -50,7 +50,7 @@ const MessageInput = ({ onSend, onTyping, disabled = false }) => {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
@@ -116,7 +116,7 @@ const MessageInput = ({ onSend, onTyping, disabled = false }) => {
           <textarea
             value={message}
             onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             className="input min-h-[60px] max-h-[120px] resize-none"
             disabled={disabled}

@@ -51,10 +51,21 @@ const getSocketConfig = (authToken) => ({
 export const chatService = {
   // Initialize Socket.IO connection with production settings
   connectSocket: (authToken) => {
+    // If socket exists and is connected, return it
     if (socket && socket.connected) {
+      console.log('Reusing existing socket connection:', socket.id);
       return socket;
     }
 
+    // If socket exists but is disconnected, try to reconnect
+    if (socket && !socket.connected) {
+      console.log('Reconnecting existing socket...');
+      socket.connect();
+      return socket;
+    }
+
+    // Create new socket connection
+    console.log('Creating new socket connection...');
     token = authToken;
     const serverUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 

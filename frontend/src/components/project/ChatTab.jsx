@@ -20,6 +20,8 @@ const ChatTab = ({ projectId }) => {
   useEffect(() => {
     if (!user || !projectId) return;
 
+    let socket = null;
+
     const initChat = async () => {
       try {
         // Get auth token from cookies or localStorage
@@ -31,28 +33,56 @@ const ChatTab = ({ projectId }) => {
 
         if (!token) {
           console.error('No auth token found');
+          setConnected(false);
+          setLoading(false);
           return;
         }
 
         // Connect socket
-        const socket = chatService.connectSocket(token);
+        socket = chatService.connectSocket(token);
 
-        // Socket event listeners
-        socket.on('connect', async () => {
-          console.log('Chat connected');
+        // Socket event listeners with proper cleanup
+        const handleConnect = async () => {
+          console.log('Chat connected:', socket.id);
           setConnected(true);
           try {
             await chatService.joinProject(projectId);
             console.log('Successfully joined project chat');
           } catch (error) {
             console.error('Failed to join project chat:', error);
+            setConnected(false);
           }
-        });
+        };
 
-        socket.on('disconnect', () => {
-          console.log('Chat disconnected');
+        const handleDisconnect = (reason) => {
+          console.log('Chat disconnected:', reason);
           setConnected(false);
-        });
+        };
+
+        const handleConnectError = (error) => {
+          console.error('Socket connection error:', error);
+          setConnected(false);
+        };
+
+        const handleReconnect = () => {
+          console.log('Chat reconnected');
+          setConnected(true);
+          // Rejoin project after reconnection
+          chatService.joinProject(projectId).catch(error => {
+            console.error('Failed to rejoin project after reconnect:', error);
+          });
+        };
+
+        // Attach event listeners
+        socket.on('connect', handleConnect);
+        socket.on('disconnect', handleDisconnect);
+        socket.on('connect_error', handleConnectError);
+        socket.on('reconnect', handleReconnect);
+
+        // If already connected, trigger connect handler
+        if (socket.connected) {
+          handleConnect();
+        }
 
         // Fetch message history
         const response = await chatService.fetchMessages(projectId, {
@@ -66,6 +96,7 @@ const ChatTab = ({ projectId }) => {
       } catch (error) {
         console.error('Failed to initialize chat:', error);
         setLoading(false);
+        setConnected(false);
       }
     };
 
@@ -73,6 +104,14 @@ const ChatTab = ({ projectId }) => {
 
     // Cleanup on unmount
     return () => {
+      if (socket) {
+        // Remove event listeners
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.off('connect_error');
+        socket.off('reconnect');
+      }
+      
       if (projectId) {
         chatService.leaveProject(projectId).catch(error => {
           console.error('Error leaving project chat:', error);
